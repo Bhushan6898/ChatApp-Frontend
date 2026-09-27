@@ -1,42 +1,31 @@
-import { useState, type FormEvent, type KeyboardEvent } from 'react'
-import {
-  Archive,
-  ArrowLeft,
-  Check,
-  CheckCheck,
-  ChevronDown,
-  Inbox,
-  MessageCircle,
-  Plus,
-  Search,
-  Send,
-  Smile,
-  Star,
-} from 'lucide-react'
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { io, type Socket } from 'socket.io-client'
+import { InboxPanel } from './components/InboxPanel'
+import { SideRail } from './components/SideRail'
+import { ThreadPanel } from './components/ThreadPanel'
+import type { Conversation, Folder } from './chatTypes'
 import './App.css'
 
-type Message = {
+type SocketMessage = {
   id: number
+  conversationId: number
   text: string
   time: string
   sender: 'me' | 'them'
 }
 
-type Conversation = {
-  id: number
-  name: string
-  initials: string
-  color: string
-  role: string
-  preview: string
-  time: string
-  unread: number
-  starred: boolean
-  archived: boolean
-  group: boolean
-  online: boolean
-  messages: Message[]
+type ServerToClientEvents = {
+  'message:receive': (message: SocketMessage) => void
 }
+
+type ClientToServerEvents = {
+  'message:send': (message: SocketMessage) => void
+}
+
+const socketUrl = import.meta.env.VITE_SOCKET_URL
+const socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = socketUrl
+  ? io(socketUrl, { autoConnect: false }) as Socket<ServerToClientEvents, ClientToServerEvents>
+  : null
 
 const seedConversations: Conversation[] = [
   {
@@ -149,8 +138,6 @@ const seedConversations: Conversation[] = [
   },
 ]
 
-type Folder = 'inbox' | 'starred' | 'archived'
-
 function App() {
   const [conversations, setConversations] = useState(seedConversations)
   const [activeId, setActiveId] = useState(1)
@@ -158,6 +145,51 @@ function App() {
   const [search, setSearch] = useState('')
   const [draft, setDraft] = useState('')
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false)
+  const [socketConnected, setSocketConnected] = useState(false)
+
+  useEffect(() => {
+    if (!socket) return
+
+    function receiveMessage(message: SocketMessage) {
+      setConversations((current) => current.map((conversation) => {
+        if (conversation.id !== message.conversationId || conversation.messages.some((item) => item.id === message.id)) {
+          return conversation
+        }
+
+        return {
+          ...conversation,
+          preview: message.sender === 'me' ? `You: ${message.text}` : message.text,
+          time: message.time,
+          messages: [...conversation.messages, {
+            id: message.id,
+            text: message.text,
+            time: message.time,
+            sender: message.sender,
+          }],
+        }
+      }))
+    }
+
+    function handleConnect() {
+      setSocketConnected(true)
+    }
+
+    function handleDisconnect() {
+      setSocketConnected(false)
+    }
+
+    socket.on('message:receive', receiveMessage)
+    socket.on('connect', handleConnect)
+    socket.on('disconnect', handleDisconnect)
+    socket.connect()
+
+    return () => {
+      socket.off('message:receive', receiveMessage)
+      socket.off('connect', handleConnect)
+      socket.off('disconnect', handleDisconnect)
+      socket.disconnect()
+    }
+  }, [])
 
   const visibleConversations = conversations.filter((conversation) => {
     const query = search.trim().toLowerCase()
@@ -184,8 +216,16 @@ function App() {
     if (!text || !activeConversation) return
 
     const time = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(new Date())
+    const message: SocketMessage = {
+      id: Date.now(),
+      conversationId: activeConversation.id,
+      text,
+      time,
+      sender: 'me',
+    }
+    socket?.emit('message:send', message)
     setConversations((current) => current.map((item) => item.id === activeConversation.id
-      ? { ...item, preview: `You: ${text}`, time, messages: [...item.messages, { id: Date.now(), text, time, sender: 'me' }] }
+      ? { ...item, preview: `You: ${text}`, time, messages: [...item.messages, { id: message.id, text, time, sender: 'me' }] }
       : item))
     setDraft('')
   }
@@ -227,159 +267,26 @@ function App() {
 
   return (
     <main className={`chat-app${mobileThreadOpen ? ' chat-app--thread-open' : ''}`}>
-      <aside className="side-rail" aria-label="Main navigation">
-        <button className="brand-mark" type="button" aria-label="Morrow home" onClick={() => setFolder('inbox')}>m<span>.</span></button>
-        <div className="rail-rule" />
-        <button className={`rail-button${folder === 'inbox' ? ' is-active' : ''}`} type="button" aria-label="Inbox" title="Inbox" onClick={() => setFolder('inbox')}>
-          <Inbox size={19} strokeWidth={1.8} />
-          <span className="rail-indicator" />
-        </button>
-        <button className={`rail-button${folder === 'starred' ? ' is-active' : ''}`} type="button" aria-label="Starred" title="Starred" onClick={() => setFolder('starred')}>
-          <Star size={19} strokeWidth={1.8} />
-        </button>
-        <button className={`rail-button${folder === 'archived' ? ' is-active' : ''}`} type="button" aria-label="Archived" title="Archived" onClick={() => setFolder('archived')}>
-          <Archive size={19} strokeWidth={1.8} />
-        </button>
-        <div className="rail-spacer" />
-        <button className="profile-avatar" type="button" title="Your profile" aria-label="Your profile">SK</button>
-          <span className="profile-avatar" title="Signed in as Sam" aria-label="Signed in as Sam">SK</span>
-      </aside>
-
-      <section className="inbox-panel" aria-label="Conversations">
-        <header className="inbox-header">
-          <div className="workspace-switcher">
-            <span className="workspace-dot" />
-            <span>Northstar Studio</span>
-            <ChevronDown size={14} />
-          </div>
-          <div className="inbox-title-row">
-            <div>
-              <p className="eyebrow">YOUR SPACE</p>
-              <h1>{folder === 'starred' ? 'Starred' : folder === 'archived' ? 'Archive' : 'Messages'}</h1>
-            </div>
-            <button className="icon-button add-button" type="button" title="New conversation" aria-label="New conversation" onClick={createConversation}>
-              <Plus size={19} />
-            </button>
-          </div>
-          <label className="search-field">
-            <Search size={16} />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search conversations" aria-label="Search conversations" />
-          </label>
-          <div className="list-label-row">
-            <span>{folder === 'archived' ? 'OLDER CONVERSATIONS' : 'RECENT'}</span>
-            <span>{visibleConversations.length.toString().padStart(2, '0')}</span>
-          </div>
-        </header>
-
-        <div className="conversation-list">
-          {visibleConversations.map((conversation) => (
-            <button
-              className={`conversation-item${activeId === conversation.id ? ' is-selected' : ''}`}
-              key={conversation.id}
-              type="button"
-              onClick={() => selectConversation(conversation)}
-            >
-              <span className={`avatar avatar--${conversation.color}`}>
-                {conversation.initials}
-                {conversation.online && <span className="online-dot" />}
-              </span>
-              <span className="conversation-copy">
-                <span className="conversation-heading">
-                  <span className="conversation-name">{conversation.name}</span>
-                  <span className="conversation-time">{conversation.time}</span>
-                </span>
-                <span className="conversation-preview">{conversation.preview}</span>
-              </span>
-              {conversation.unread > 0 && <span className="unread-count">{conversation.unread}</span>}
-            </button>
-          ))}
-          {visibleConversations.length === 0 && (
-            <div className="empty-list">
-              <MessageCircle size={20} />
-              <p>No conversations found</p>
-              <span>Try another search or start a new chat.</span>
-            </div>
-          )}
-        </div>
-        <footer className="inbox-footer">
-          <span className="footer-status-dot" />
-          <span>All caught up</span>
-        </footer>
-      </section>
-
-      <section className="thread-panel" aria-label={`Conversation with ${activeConversation.name}`}>
-        <header className="thread-header">
-          <button className="back-button icon-button" type="button" aria-label="Back to conversations" onClick={() => setMobileThreadOpen(false)}>
-            <ArrowLeft size={19} />
-          </button>
-          <span className={`avatar thread-avatar avatar--${activeConversation.color}`}>
-            {activeConversation.initials}
-            {activeConversation.online && <span className="online-dot" />}
-          </span>
-          <div className="thread-person">
-            <h2>{activeConversation.name}</h2>
-            <p><span className={activeConversation.online ? 'presence-dot' : 'presence-dot presence-dot--off'} />{activeConversation.online ? 'Available now' : activeConversation.role}</p>
-          </div>
-          <div className="thread-actions">
-            <button className={`icon-button star-button${activeConversation.starred ? ' is-starred' : ''}`} type="button" aria-label={activeConversation.starred ? 'Remove from starred' : 'Add to starred'} title={activeConversation.starred ? 'Remove from starred' : 'Add to starred'} onClick={toggleStar}>
-              <Star size={18} fill={activeConversation.starred ? 'currentColor' : 'none'} />
-            </button>
-            <span className="header-divider" />
-            <span className="thread-date">Today</span>
-          </div>
-        </header>
-
-        <div className="message-scroll">
-          <div className="thread-intro">
-            <span className={`avatar intro-avatar avatar--${activeConversation.color}`}>{activeConversation.initials}</span>
-            <h3>{activeConversation.name}</h3>
-            <p>{activeConversation.role} · You started this conversation</p>
-            <span className="intro-date">TODAY</span>
-          </div>
-          <div className="message-list" aria-live="polite">
-            {activeConversation.messages.map((message, index) => {
-              const previousMessage = activeConversation.messages[index - 1]
-              const showSender = message.sender === 'them' && previousMessage?.sender !== 'them'
-              return (
-                <div className={`message-row message-row--${message.sender}`} key={message.id}>
-                  {showSender && <span className={`avatar message-avatar avatar--${activeConversation.color}`}>{activeConversation.initials}</span>}
-                  <div className="message-content">
-                    {showSender && <span className="message-sender">{activeConversation.name}<span>{message.time}</span></span>}
-                    <div className="message-bubble">{message.text}</div>
-                    {message.sender === 'me' && <span className="message-receipt">{message.time} <CheckCheck size={13} /></span>}
-                  </div>
-                </div>
-              )
-            })}
-            {activeConversation.messages.length === 0 && <p className="first-message-hint">A fresh start. Say hello to {activeConversation.name.split(' ')[0]}.</p>}
-          </div>
-        </div>
-
-        <div className="composer-wrap">
-          <form className="composer" onSubmit={sendMessage}>
-            <textarea
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={handleComposerKeyDown}
-              placeholder={`Message ${activeConversation.name.split(' ')[0]}...`}
-              aria-label="Write a message"
-              rows={1}
-            />
-            <div className="composer-bottom">
-              <div className="composer-tools">
-                <button className="composer-tool" type="button" title="Insert a smile" aria-label="Insert a smile" onClick={() => setDraft((current) => `${current}🙂`)}>
-                  <Smile size={18} />
-                </button>
-                <span className="composer-hint"><kbd>↵</kbd> to send <span>·</span> <kbd>⇧ ↵</kbd> for a new line</span>
-              </div>
-              <button className="send-button" type="submit" aria-label="Send message" disabled={!draft.trim()}>
-                <span>Send</span><Send size={15} />
-              </button>
-            </div>
-          </form>
-          <p className="encryption-note"><Check size={12} /> Your messages are shown in this local preview.</p>
-        </div>
-      </section>
+      <SideRail folder={folder} onFolderChange={setFolder} />
+      <InboxPanel
+        folder={folder}
+        visibleConversations={visibleConversations}
+        activeId={activeId}
+        search={search}
+        onSearchChange={setSearch}
+        onCreateConversation={createConversation}
+        onSelectConversation={selectConversation}
+      />
+      <ThreadPanel
+        activeConversation={activeConversation}
+        draft={draft}
+        socketConnected={socketConnected}
+        onBack={() => setMobileThreadOpen(false)}
+        onToggleStar={toggleStar}
+        onSubmit={sendMessage}
+        onDraftChange={setDraft}
+        onComposerKeyDown={handleComposerKeyDown}
+      />
     </main>
   )
 }
