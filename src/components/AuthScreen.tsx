@@ -15,6 +15,7 @@ export function AuthScreen({ apiConnectionStatus, apiConnectionResponse, onLogin
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const ConnectionIcon = apiConnectionStatus === 'checking'
     ? LoaderCircle
@@ -36,11 +37,13 @@ export function AuthScreen({ apiConnectionStatus, apiConnectionResponse, onLogin
     event.preventDefault()
     const normalizedEmail = email.trim().toLowerCase()
     setError('')
+    setSuccess('')
     setIsSubmitting(true)
 
     try {
       if (page === 'register') {
         await onRegister({ name: name.trim(), email: normalizedEmail, password })
+        setSuccess('Your account was created. You can now log in.')
       } else {
         await onLogin({ email: normalizedEmail, password })
       }
@@ -91,6 +94,7 @@ export function AuthScreen({ apiConnectionStatus, apiConnectionResponse, onLogin
               <input type="password" autoComplete={page === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" minLength={page === 'register' ? 8 : undefined} required />
             </label>
             {error && <p className="auth-error" role="alert">{error}</p>}
+            {success && <p className="auth-success" role="status">{success}</p>}
             <button className="auth-submit" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Please wait...' : page === 'login' ? 'Log in to ChatApplication' : 'Create account'} {!isSubmitting && <ArrowRight size={17} />}
             </button>

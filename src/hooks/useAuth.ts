@@ -16,8 +16,6 @@ export function useAuth() {
         if (active) {
           setApiConnectionStatus('connected')
           setApiConnectionResponse(response)
-          console.log(response);
-          
         }
       })
       .catch(() => {
@@ -44,7 +42,7 @@ export function useAuth() {
   }
 
   async function register(input: RegisterInput) {
-    await authRepository.register(input)
+     await authRepository.register(input)
     window.location.hash = '#/login'
   }
 

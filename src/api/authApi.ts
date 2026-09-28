@@ -7,17 +7,17 @@ export function checkConnection(): Promise<AxiosResponse<unknown>> {
 }
 
 export function getUser(): Promise<AxiosResponse<UserApiResponse>> {
-  return axiosInstance.get('/getuser')
+  return axiosInstance.get('/api/users/getuser')
 }
 
 export function login(credentials: LoginCredentials): Promise<AxiosResponse<AuthApiResponse>> {
-  return axiosInstance.post('/login', credentials)
+  return axiosInstance.post('/api/user/login', credentials)
 }
 
 export function register(input: RegisterInput): Promise<AxiosResponse<AuthApiResponse>> {
-  return axiosInstance.post('/register', input)
+  return axiosInstance.post('/api/user/register', input)
 }
 
 export function logout(): Promise<AxiosResponse<unknown>> {
-  return axiosInstance.post('/logout')
+  return axiosInstance.post('/api/users/logout')
 }
