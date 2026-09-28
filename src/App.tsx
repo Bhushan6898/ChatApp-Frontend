@@ -57,7 +57,7 @@ const seedConversations: Conversation[] = [
     initials: 'SW',
     color: 'mustard',
     role: '4 members',
-    preview: 'Milo: I’ve added the notes from today.',
+    preview: 'Rohan: I’ve added the notes from today.',
     time: '09:56',
     unread: 0,
     starred: false,
@@ -71,8 +71,8 @@ const seedConversations: Conversation[] = [
   },
   {
     id: 3,
-    name: 'Theo Martin',
-    initials: 'TM',
+    name: 'Arjun Mehta',
+    initials: 'AM',
     color: 'blue',
     role: 'Engineering',
     preview: 'You: Great, thanks for checking.',
@@ -89,8 +89,8 @@ const seedConversations: Conversation[] = [
   },
   {
     id: 4,
-    name: 'Amara Okafor',
-    initials: 'AO',
+    name: 'Ananya Sharma',
+    initials: 'AS',
     color: 'lilac',
     role: 'Research lead',
     preview: 'The interviews were so helpful.',
@@ -123,8 +123,8 @@ const seedConversations: Conversation[] = [
   },
   {
     id: 6,
-    name: 'Jules Rivera',
-    initials: 'JR',
+    name: 'Riya Kapoor',
+    initials: 'RK',
     color: 'rose',
     role: 'Operations',
     preview: 'Sounds good, talk soon!',
@@ -253,8 +253,8 @@ function App() {
     const nextId = Math.max(...conversations.map((item) => item.id)) + 1
     const conversation: Conversation = {
       id: nextId,
-      name: 'Ari Lane',
-      initials: 'AL',
+      name: 'Aditi Rao',
+      initials: 'AR',
       color: 'green',
       role: 'New conversation',
       preview: 'Start a conversation',
