@@ -1,43 +1,46 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { ArrowRight, LockKeyhole, MessageCircle, ShieldCheck } from 'lucide-react'
-
-type DemoAccount = {
-  name: string
-  email: string
-  password: string
-}
+import type { RegisterPayload } from '../repository/authApi'
 
 type AuthScreenProps = {
-  accountExists: boolean
-  onLogin: (email: string, password: string) => boolean
-  onRegister: (account: DemoAccount) => void
+  onLogin: (email: string, password: string) => Promise<void>
+  onRegister: (account: RegisterPayload) => Promise<void>
 }
 
-export function AuthScreen({ accountExists, onLogin, onRegister }: AuthScreenProps) {
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+export function AuthScreen({ onLogin, onRegister }: AuthScreenProps) {
+  const [page, setPage] = useState<'login' | 'register'>(() => window.location.hash === '#/register' ? 'register' : 'login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function changeMode(nextMode: 'login' | 'register') {
-    setMode(nextMode)
-    setError('')
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const normalizedEmail = email.trim().toLowerCase()
-
-    if (mode === 'register') {
-      onRegister({ name: name.trim(), email: normalizedEmail, password })
-      return
+  useEffect(() => {
+    function syncPage() {
+      setPage(window.location.hash === '#/register' ? 'register' : 'login')
+      setError('')
     }
 
-    if (!onLogin(normalizedEmail, password)) {
-      setError(accountExists
-        ? 'That email and password do not match.'
-        : 'No account is registered in this session yet.')
+    window.addEventListener('hashchange', syncPage)
+    return () => window.removeEventListener('hashchange', syncPage)
+  }, [])
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const normalizedEmail = email.trim().toLowerCase()
+    setError('')
+    setIsSubmitting(true)
+
+    try {
+      if (page === 'register') {
+        await onRegister({ name: name.trim(), email: normalizedEmail, password })
+      } else {
+        await onLogin(normalizedEmail, password)
+      }
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Something went wrong. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -61,17 +64,12 @@ export function AuthScreen({ accountExists, onLogin, onRegister }: AuthScreenPro
       <section className="auth-form-panel">
         <div className="auth-form-wrap">
           <p className="auth-mobile-brand">C<span>.</span> ChatApplication</p>
-          <p className="auth-form-kicker">WELCOME TO CHATAPPLICATION</p>
-          <h2>{mode === 'login' ? 'Welcome back' : 'Create your account'}</h2>
-          <p className="auth-form-intro">{mode === 'login' ? 'Sign in to pick up where you left off.' : 'A good conversation is just around the corner.'}</p>
+          <p className="auth-form-kicker">{page === 'login' ? 'WELCOME TO CHATAPPLICATION' : 'JOIN CHATAPPLICATION'}</p>
+          <h2>{page === 'login' ? 'Welcome back' : 'Create your account'}</h2>
+          <p className="auth-form-intro">{page === 'login' ? 'Sign in to pick up where you left off.' : 'Create an account to start a conversation.'}</p>
 
-          <div className="auth-mode-switch" role="group" aria-label="Choose sign-in or registration">
-            <button type="button" aria-pressed={mode === 'login'} className={mode === 'login' ? 'is-selected' : ''} onClick={() => changeMode('login')}>Log in</button>
-            <button type="button" aria-pressed={mode === 'register'} className={mode === 'register' ? 'is-selected' : ''} onClick={() => changeMode('register')}>Create account</button>
-          </div>
-
-          <form className="auth-form" onSubmit={submit}>
-            {mode === 'register' && (
+          <form className="auth-form" onSubmit={(event) => void submit(event)}>
+            {page === 'register' && (
               <label className="auth-field">
                 <span>Name</span>
                 <input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" required />
@@ -83,21 +81,21 @@ export function AuthScreen({ accountExists, onLogin, onRegister }: AuthScreenPro
             </label>
             <label className="auth-field">
               <span>Password</span>
-              <input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" minLength={mode === 'register' ? 8 : undefined} required />
+              <input type="password" autoComplete={page === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" minLength={page === 'register' ? 8 : undefined} required />
             </label>
             {error && <p className="auth-error" role="alert">{error}</p>}
-            <button className="auth-submit" type="submit">
-              {mode === 'login' ? 'Log in to ChatApplication' : 'Create account'} <ArrowRight size={17} />
+            <button className="auth-submit" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Please wait...' : page === 'login' ? 'Log in to ChatApplication' : 'Create account'} {!isSubmitting && <ArrowRight size={17} />}
             </button>
           </form>
 
           <p className="auth-switch-copy">
-            {mode === 'login' ? 'New to ChatApplication?' : 'Already have an account?'}{' '}
-            <button type="button" onClick={() => changeMode(mode === 'login' ? 'register' : 'login')}>
-              {mode === 'login' ? 'Create an account' : 'Log in'}
-            </button>
+            {page === 'login' ? 'New to ChatApplication?' : 'Already have an account?'}{' '}
+            <a href={page === 'login' ? '#/register' : '#/login'}>
+              {page === 'login' ? 'Create an account' : 'Log in'}
+            </a>
           </p>
-          <p className="auth-demo-note"><LockKeyhole size={13} /> Demo sign-in only. Your details stay in this session.</p>
+          <p className="auth-demo-note"><LockKeyhole size={13} /> Credentials are sent to your configured API.</p>
         </div>
       </section>
     </main>

@@ -4,14 +4,9 @@ import { InboxPanel } from './components/InboxPanel'
 import { SideRail } from './components/SideRail'
 import { ThreadPanel } from './components/ThreadPanel'
 import { AuthScreen } from './components/AuthScreen'
+import { loginUser, registerUser, type AuthSession, type RegisterPayload } from './repository/authApi'
 import type { Conversation, Folder } from './chatTypes'
 import './App.css'
-
-type DemoAccount = {
-  name: string
-  email: string
-  password: string
-}
 
 type SocketMessage = {
   id: number
@@ -146,8 +141,7 @@ const seedConversations: Conversation[] = [
 ]
 
 function App() {
-  const [account, setAccount] = useState<DemoAccount | null>(null)
-  const [currentUser, setCurrentUser] = useState<Pick<DemoAccount, 'name' | 'email'> | null>(null)
+  const [authSession, setAuthSession] = useState<AuthSession | null>(null)
   const [conversations, setConversations] = useState(seedConversations)
   const [activeId, setActiveId] = useState(1)
   const [folder, setFolder] = useState<Folder>('inbox')
@@ -157,7 +151,7 @@ function App() {
   const [socketConnected, setSocketConnected] = useState(false)
 
   useEffect(() => {
-    if (!socket || !currentUser) return
+    if (!socket || !authSession) return
 
     function receiveMessage(message: SocketMessage) {
       setConversations((current) => current.map((conversation) => {
@@ -198,18 +192,21 @@ function App() {
       socket.off('disconnect', handleDisconnect)
       socket.disconnect()
     }
-  }, [currentUser])
+  }, [authSession])
 
-  function registerAccount(newAccount: DemoAccount) {
-    setAccount(newAccount)
-    setCurrentUser({ name: newAccount.name, email: newAccount.email })
+  async function registerAccount(newAccount: RegisterPayload) {
+    const session = await registerUser(newAccount)
+    setAuthSession(session)
   }
 
-  function signIn(email: string, password: string) {
-    if (!account || account.email !== email || account.password !== password) return false
+  async function signIn(email: string, password: string) {
+    const session = await loginUser({ email, password })
+    setAuthSession(session)
+  }
 
-    setCurrentUser({ name: account.name, email: account.email })
-    return true
+  function signOut() {
+    setAuthSession(null)
+    window.location.hash = '#/login'
   }
 
   const visibleConversations = conversations.filter((conversation) => {
@@ -286,17 +283,17 @@ function App() {
     setMobileThreadOpen(true)
   }
 
-  if (!currentUser) {
-    return <AuthScreen accountExists={Boolean(account)} onLogin={signIn} onRegister={registerAccount} />
+  if (!authSession) {
+    return <AuthScreen onLogin={signIn} onRegister={registerAccount} />
   }
 
   return (
     <main className={`chat-app${mobileThreadOpen ? ' chat-app--thread-open' : ''}`}>
       <SideRail
         folder={folder}
-        userName={currentUser.name}
+        userName={authSession.user.name}
         onFolderChange={setFolder}
-        onSignOut={() => setCurrentUser(null)}
+        onSignOut={signOut}
       />
       <InboxPanel
         folder={folder}

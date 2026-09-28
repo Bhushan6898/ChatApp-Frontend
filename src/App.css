@@ -550,9 +550,6 @@ kbd { white-space: nowrap; color: #9da69f; font-family: inherit; font-size: 9px;
 .auth-form-kicker { margin: 0 0 10px; color: #789186; font-size: 9px; font-weight: 700; letter-spacing: 1.3px; }
 .auth-form-wrap h2 { margin: 0; color: #22332d; font-family: Georgia, 'Times New Roman', serif; font-size: 34px; font-weight: 400; }
 .auth-form-intro { margin: 9px 0 25px; color: #8b9790; font-size: 12px; }
-.auth-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 6px; background: #f1f4f0; }
-.auth-mode-switch button { min-height: 36px; border: 0; border-radius: 4px; background: transparent; color: #78857e; font-size: 11px; font-weight: 600; cursor: pointer; }
-.auth-mode-switch button.is-selected { background: #fffefa; color: #285e51; box-shadow: 0 1px 4px rgb(30 54 44 / 9%); }
 .auth-form { display: flex; flex-direction: column; gap: 16px; margin-top: 23px; }
 .auth-field { display: flex; flex-direction: column; gap: 7px; color: #3b4b43; font-size: 10px; font-weight: 700; }
 .auth-field input { width: 100%; height: 43px; padding: 0 12px; border: 1px solid #e1e8e1; border-radius: 5px; background: #fff; color: #26362f; font-size: 12px; font-weight: 400; }
@@ -561,8 +558,10 @@ kbd { white-space: nowrap; color: #9da69f; font-family: inherit; font-size: 9px;
 .auth-error { margin: -5px 0 0; color: #b34d3d; font-size: 11px; }
 .auth-submit { display: flex; min-height: 45px; align-items: center; justify-content: center; gap: 9px; margin-top: 2px; border: 0; border-radius: 5px; background: #286257; color: #fff; font-size: 11px; font-weight: 700; cursor: pointer; transition: background 150ms ease, transform 150ms ease; }
 .auth-submit:hover { transform: translateY(-1px); background: #1e5147; }
+.auth-submit:disabled { opacity: .75; cursor: wait; }
 .auth-switch-copy { margin: 21px 0 0; color: #87928b; font-size: 10px; text-align: center; }
-.auth-switch-copy button { padding: 0; border: 0; background: none; color: #286257; font-size: inherit; font-weight: 700; cursor: pointer; }
+.auth-switch-copy a { color: #286257; font-weight: 700; text-decoration: none; }
+.auth-switch-copy a:hover { text-decoration: underline; }
 .auth-demo-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 34px 0 0; color: #9ba59e; font-size: 9px; }
 .auth-demo-note svg { color: #739580; }
 
