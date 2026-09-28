@@ -25,7 +25,7 @@ export function InboxPanel({
       <header className="inbox-header">
         <div className="workspace-switcher">
           <span className="workspace-dot" />
-          <span>Northstar </span>
+          <span>ChatApplication </span>
           <ChevronDown size={14} />
         </div>
         <div className="inbox-title-row">

@@ -3,8 +3,15 @@ import { io, type Socket } from 'socket.io-client'
 import { InboxPanel } from './components/InboxPanel'
 import { SideRail } from './components/SideRail'
 import { ThreadPanel } from './components/ThreadPanel'
+import { AuthScreen } from './components/AuthScreen'
 import type { Conversation, Folder } from './chatTypes'
 import './App.css'
+
+type DemoAccount = {
+  name: string
+  email: string
+  password: string
+}
 
 type SocketMessage = {
   id: number
@@ -139,6 +146,8 @@ const seedConversations: Conversation[] = [
 ]
 
 function App() {
+  const [account, setAccount] = useState<DemoAccount | null>(null)
+  const [currentUser, setCurrentUser] = useState<Pick<DemoAccount, 'name' | 'email'> | null>(null)
   const [conversations, setConversations] = useState(seedConversations)
   const [activeId, setActiveId] = useState(1)
   const [folder, setFolder] = useState<Folder>('inbox')
@@ -148,7 +157,7 @@ function App() {
   const [socketConnected, setSocketConnected] = useState(false)
 
   useEffect(() => {
-    if (!socket) return
+    if (!socket || !currentUser) return
 
     function receiveMessage(message: SocketMessage) {
       setConversations((current) => current.map((conversation) => {
@@ -189,7 +198,19 @@ function App() {
       socket.off('disconnect', handleDisconnect)
       socket.disconnect()
     }
-  }, [])
+  }, [currentUser])
+
+  function registerAccount(newAccount: DemoAccount) {
+    setAccount(newAccount)
+    setCurrentUser({ name: newAccount.name, email: newAccount.email })
+  }
+
+  function signIn(email: string, password: string) {
+    if (!account || account.email !== email || account.password !== password) return false
+
+    setCurrentUser({ name: account.name, email: account.email })
+    return true
+  }
 
   const visibleConversations = conversations.filter((conversation) => {
     const query = search.trim().toLowerCase()
@@ -265,9 +286,18 @@ function App() {
     setMobileThreadOpen(true)
   }
 
+  if (!currentUser) {
+    return <AuthScreen accountExists={Boolean(account)} onLogin={signIn} onRegister={registerAccount} />
+  }
+
   return (
     <main className={`chat-app${mobileThreadOpen ? ' chat-app--thread-open' : ''}`}>
-      <SideRail folder={folder} onFolderChange={setFolder} />
+      <SideRail
+        folder={folder}
+        userName={currentUser.name}
+        onFolderChange={setFolder}
+        onSignOut={() => setCurrentUser(null)}
+      />
       <InboxPanel
         folder={folder}
         visibleConversations={visibleConversations}
