@@ -4,7 +4,7 @@ import { InboxPanel } from './components/InboxPanel'
 import { SideRail } from './components/SideRail'
 import { ThreadPanel } from './components/ThreadPanel'
 import { AuthScreen } from './components/AuthScreen'
-import { loginUser, registerUser, type AuthSession, type RegisterPayload } from './repository/authApi'
+import { useAuth } from './hooks/useAuth'
 import type { Conversation, Folder } from './chatTypes'
 import './App.css'
 
@@ -141,7 +141,7 @@ const seedConversations: Conversation[] = [
 ]
 
 function App() {
-  const [authSession, setAuthSession] = useState<AuthSession | null>(null)
+  const { session: authSession, login, register, logout } = useAuth()
   const [conversations, setConversations] = useState(seedConversations)
   const [activeId, setActiveId] = useState(1)
   const [folder, setFolder] = useState<Folder>('inbox')
@@ -194,18 +194,8 @@ function App() {
     }
   }, [authSession])
 
-  async function registerAccount(newAccount: RegisterPayload) {
-    const session = await registerUser(newAccount)
-    setAuthSession(session)
-  }
-
-  async function signIn(email: string, password: string) {
-    const session = await loginUser({ email, password })
-    setAuthSession(session)
-  }
-
   function signOut() {
-    setAuthSession(null)
+    logout()
     window.location.hash = '#/login'
   }
 
@@ -284,7 +274,7 @@ function App() {
   }
 
   if (!authSession) {
-    return <AuthScreen onLogin={signIn} onRegister={registerAccount} />
+    return <AuthScreen onLogin={login} onRegister={register} />
   }
 
   return (

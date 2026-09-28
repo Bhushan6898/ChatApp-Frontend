@@ -1,10 +1,6 @@
-export type RegisterPayload = {
-  name: string
-  email: string
-  password: string
-}
+import type { LoginCredentials, RegisterInput } from '../types/auth'
 
-export type AuthSession = {
+type AuthApiResponse = {
   token: string
   user: {
     name: string
@@ -12,15 +8,13 @@ export type AuthSession = {
   }
 }
 
-type LoginPayload = Pick<RegisterPayload, 'email' | 'password'>
-
 const apiBaseUrl = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '')
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-async function postAuth<TPayload>(path: string, payload: TPayload): Promise<AuthSession> {
+async function postAuth<TPayload>(path: string, payload: TPayload): Promise<AuthApiResponse> {
   if (!apiBaseUrl) {
     throw new Error('Authentication API is not configured. Set VITE_API_URL and restart the app.')
   }
@@ -55,10 +49,10 @@ async function postAuth<TPayload>(path: string, payload: TPayload): Promise<Auth
   }
 }
 
-export function loginUser(payload: LoginPayload): Promise<AuthSession> {
-  return postAuth('login', payload)
+export function login(credentials: LoginCredentials): Promise<AuthApiResponse> {
+  return postAuth('login', credentials)
 }
 
-export function registerUser(payload: RegisterPayload): Promise<AuthSession> {
-  return postAuth('register', payload)
+export function register(input: RegisterInput): Promise<AuthApiResponse> {
+  return postAuth('register', input)
 }

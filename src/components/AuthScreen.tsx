@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { ArrowRight, LockKeyhole, MessageCircle, ShieldCheck } from 'lucide-react'
-import type { RegisterPayload } from '../repository/authApi'
+import type { RegisterInput } from '../types/auth'
 
 type AuthScreenProps = {
-  onLogin: (email: string, password: string) => Promise<void>
-  onRegister: (account: RegisterPayload) => Promise<void>
+  onLogin: (credentials: { email: string; password: string }) => Promise<void>
+  onRegister: (input: RegisterInput) => Promise<void>
 }
 
 export function AuthScreen({ onLogin, onRegister }: AuthScreenProps) {
@@ -35,7 +35,7 @@ export function AuthScreen({ onLogin, onRegister }: AuthScreenProps) {
       if (page === 'register') {
         await onRegister({ name: name.trim(), email: normalizedEmail, password })
       } else {
-        await onLogin(normalizedEmail, password)
+        await onLogin({ email: normalizedEmail, password })
       }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Something went wrong. Please try again.')
