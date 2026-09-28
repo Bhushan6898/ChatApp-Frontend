@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const configuredBaseURL = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '')
-  || 'http://localhost:3001'
+  || 'https://chatapp-backend-6zgm.onrender.com/'
 
 export const BaseURL = import.meta.env.DEV ? '' : configuredBaseURL
 
