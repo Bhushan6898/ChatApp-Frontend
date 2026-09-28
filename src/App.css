@@ -474,10 +474,15 @@ kbd { white-space: nowrap; color: #9da69f; font-family: inherit; font-size: 9px;
 
 @media (max-width: 720px) {
   #root { padding: 0; }
-  .chat-app { position: relative; grid-template-columns: minmax(0, 1fr); width: 100%; height: 100dvh; min-height: 500px; border: 0; border-radius: 0; }
-  .side-rail { display: none; }
+  .chat-app { position: relative; grid-template-columns: minmax(0, 1fr); grid-template-rows: 56px minmax(0, 1fr); width: 100%; height: 100dvh; min-height: 500px; border: 0; border-radius: 0; }
+  .side-rail { display: flex; grid-area: 1 / 1; align-items: center; flex-direction: row; gap: 3px; padding: 6px 12px; }
+  .brand-mark { width: 34px; height: 34px; flex: 0 0 auto; font-size: 22px; }
+  .rail-rule { display: none; }
+  .rail-button { margin: 0 2px; }
+  .rail-button.is-active::before { top: auto; right: auto; bottom: -7px; left: 50%; width: 18px; height: 3px; transform: translateX(-50%); border-radius: 3px 3px 0 0; }
+  .profile-avatar { flex: 0 0 auto; }
   .inbox-panel,
-  .thread-panel { grid-area: 1 / 1; min-height: 0; }
+  .thread-panel { grid-area: 2 / 1; min-height: 0; }
   .inbox-panel { border: 0; }
   .thread-panel { display: none; }
   .chat-app--thread-open .inbox-panel { display: none; }
