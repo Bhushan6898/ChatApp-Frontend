@@ -1,19 +1,40 @@
-import * as authApi from '../api/authApi'
-import type { AuthSession, LoginCredentials, RegisterInput } from '../types/auth'
+import userRepository from './userRepository'
+import type { AuthApiResponse, AuthSession, LoginCredentials, RegisterInput } from '../types/auth'
 
-function createSession(response: Awaited<ReturnType<typeof authApi.login>>): AuthSession {
+function createSession(response: AuthApiResponse, fallbackEmail: string): AuthSession {
+  const apiUser = response.user ?? response.data?.user
+  const email = apiUser?.email ?? fallbackEmail
+
   return {
-    accessToken: response.token,
-    user: response.user,
+    accessToken: response.accessToken ?? response.token ?? response.data?.accessToken ?? response.data?.token ?? null,
+    user: {
+      name: apiUser?.name ?? apiUser?.username ?? email.split('@')[0],
+      email,
+    },
   }
 }
 
 export const authRepository = {
-  async login(credentials: LoginCredentials): Promise<AuthSession> {
-    return createSession(await authApi.login(credentials))
+  async checkConnection(): Promise<unknown> {
+    return userRepository.connection()
   },
 
-  async register(input: RegisterInput): Promise<AuthSession> {
-    return createSession(await authApi.register(input))
+  async restore(): Promise<AuthSession> {
+    const response = await userRepository.getUser()
+    if (!response.user) throw new Error('Could not restore the signed-in user.')
+
+    return createSession({ user: response.user }, response.user.email ?? 'user@example.com')
+  },
+
+  async login(credentials: LoginCredentials): Promise<AuthSession> {
+    return createSession(await userRepository.login(credentials), credentials.email)
+  },
+
+  async register(input: RegisterInput): Promise<void> {
+    await userRepository.registration(input)
+  },
+
+  async logout(): Promise<void> {
+    await userRepository.logout()
   },
 }

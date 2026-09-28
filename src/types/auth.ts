@@ -12,7 +12,30 @@ export type AuthUser = {
   email: string
 }
 
+export type ApiUser = {
+  name?: string
+  username?: string
+  email?: string
+}
+
+export type AuthApiData = {
+  token?: string
+  accessToken?: string
+  user?: ApiUser
+}
+
+export type AuthApiResponse = AuthApiData & {
+  message?: string
+  data?: AuthApiData
+}
+
+export type UserApiResponse = {
+  user?: ApiUser
+}
+
 export type AuthSession = {
-  accessToken: string
+  accessToken: string | null
   user: AuthUser
 }
+
+export type ApiConnectionStatus = 'checking' | 'connected' | 'unavailable'

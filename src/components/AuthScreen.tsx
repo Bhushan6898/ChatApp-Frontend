@@ -1,19 +1,26 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { ArrowRight, LockKeyhole, MessageCircle, ShieldCheck } from 'lucide-react'
-import type { RegisterInput } from '../types/auth'
+import { ArrowRight, CircleCheck, LoaderCircle, MessageCircle, ShieldCheck, WifiOff } from 'lucide-react'
+import type { ApiConnectionStatus, RegisterInput } from '../types/auth'
 
 type AuthScreenProps = {
+  apiConnectionStatus: ApiConnectionStatus
+  apiConnectionResponse: unknown
   onLogin: (credentials: { email: string; password: string }) => Promise<void>
   onRegister: (input: RegisterInput) => Promise<void>
 }
 
-export function AuthScreen({ onLogin, onRegister }: AuthScreenProps) {
+export function AuthScreen({ apiConnectionStatus, apiConnectionResponse, onLogin, onRegister }: AuthScreenProps) {
   const [page, setPage] = useState<'login' | 'register'>(() => window.location.hash === '#/register' ? 'register' : 'login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const ConnectionIcon = apiConnectionStatus === 'checking'
+    ? LoaderCircle
+    : apiConnectionStatus === 'connected'
+      ? CircleCheck
+      : WifiOff
 
   useEffect(() => {
     function syncPage() {
@@ -95,7 +102,20 @@ export function AuthScreen({ onLogin, onRegister }: AuthScreenProps) {
               {page === 'login' ? 'Create an account' : 'Log in'}
             </a>
           </p>
-          <p className="auth-demo-note"><LockKeyhole size={13} /> Credentials are sent to your configured API.</p>
+          <p className={`auth-demo-note auth-demo-note--${apiConnectionStatus}`} role="status" aria-live="polite">
+            <ConnectionIcon size={13} />
+            {apiConnectionStatus === 'checking' && 'Connecting to the backend...'}
+            {apiConnectionStatus === 'connected' && 'Backend connection is active.'}
+            {apiConnectionStatus === 'unavailable' && 'Backend is unavailable. Login will retry the request.'}
+          </p>
+          {apiConnectionResponse !== null && apiConnectionResponse !== undefined && (
+            <details className="auth-api-response">
+              <summary>API response</summary>
+              <pre>{typeof apiConnectionResponse === 'string'
+                ? apiConnectionResponse
+                : JSON.stringify(apiConnectionResponse, null, 2) ?? String(apiConnectionResponse)}</pre>
+            </details>
+          )}
         </div>
       </section>
     </main>

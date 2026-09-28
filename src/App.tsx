@@ -141,7 +141,7 @@ const seedConversations: Conversation[] = [
 ]
 
 function App() {
-  const { session: authSession, login, register, logout } = useAuth()
+  const { session: authSession, isCheckingSession, apiConnectionStatus, apiConnectionResponse, login, register, logout } = useAuth()
   const [conversations, setConversations] = useState(seedConversations)
   const [activeId, setActiveId] = useState(1)
   const [folder, setFolder] = useState<Folder>('inbox')
@@ -195,7 +195,7 @@ function App() {
   }, [authSession])
 
   function signOut() {
-    logout()
+    void logout().catch(() => undefined)
     window.location.hash = '#/login'
   }
 
@@ -273,8 +273,12 @@ function App() {
     setMobileThreadOpen(true)
   }
 
+  if (isCheckingSession) {
+    return <main className="auth-loading" aria-live="polite">Checking your session...</main>
+  }
+
   if (!authSession) {
-    return <AuthScreen onLogin={login} onRegister={register} />
+    return <AuthScreen apiConnectionStatus={apiConnectionStatus} apiConnectionResponse={apiConnectionResponse} onLogin={login} onRegister={register} />
   }
 
   return (
