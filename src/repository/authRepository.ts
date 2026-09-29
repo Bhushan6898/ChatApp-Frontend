@@ -1,4 +1,5 @@
 import userRepository from './userRepository'
+import { clearAuthSession, readStoredAuthSession, saveAuthSession } from './authSessionStorage'
 import type { AuthApiResponse, AuthSession, LoginCredentials, RegisterInput } from '../types/auth'
 
 function createSession(response: AuthApiResponse, fallbackEmail: string): AuthSession {
@@ -22,14 +23,21 @@ export const authRepository = {
   },
 
   async restore(): Promise<AuthSession> {
+    const storedSession = readStoredAuthSession()
+    if (storedSession) return storedSession
+
     const response = await userRepository.getUser()
     if (!response.user) throw new Error('Could not restore the signed-in user.')
 
-    return createSession({ user: response.user }, response.user.email ?? 'user@example.com')
+    const restoredSession = createSession({ user: response.user }, response.user.email ?? 'user@example.com')
+    saveAuthSession(restoredSession)
+    return restoredSession
   },
 
   async login(credentials: LoginCredentials): Promise<AuthSession> {
-    return createSession(await userRepository.login(credentials), credentials.email)
+    const session = createSession(await userRepository.login(credentials), credentials.email)
+    saveAuthSession(session)
+    return session
   },
 
   async register(input: RegisterInput): Promise<void> {
@@ -37,6 +45,10 @@ export const authRepository = {
   },
 
   async logout(): Promise<void> {
-    await userRepository.logout()
+    try {
+      await userRepository.logout()
+    } finally {
+      clearAuthSession()
+    }
   },
 }
