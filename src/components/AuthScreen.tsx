@@ -112,14 +112,14 @@ export function AuthScreen({ apiConnectionStatus, apiConnectionResponse, onLogin
             {apiConnectionStatus === 'connected' && 'Backend connection is active.'}
             {apiConnectionStatus === 'unavailable' && 'Backend is unavailable. Login will retry the request.'}
           </p>
-          {apiConnectionResponse !== null && apiConnectionResponse !== undefined && (
+          {/* {apiConnectionResponse !== null && apiConnectionResponse !== undefined && (
             <details className="auth-api-response">
               <summary>API response</summary>
               <pre>{typeof apiConnectionResponse === 'string'
                 ? apiConnectionResponse
                 : JSON.stringify(apiConnectionResponse, null, 2) ?? String(apiConnectionResponse)}</pre>
             </details>
-          )}
+          )} */}
         </div>
       </section>
     </main>

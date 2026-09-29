@@ -1,124 +1,600 @@
-# ChatApplication
+# Real-Time Chat Application
 
-ChatApplication is a responsive React chat frontend built with React, TypeScript, and Vite. It supports login and registration through a separate backend, with sample conversation data displayed in the chat interface.
+A real-time chat application built using **React, Node.js, Express.js, Socket.io, and MongoDB**. The application allows registered users to log in, communicate in real time, and view previous chat messages.
 
 ## Features
 
-- Separate login and registration pages (`#/login` and `#/register`).
-- API connection status and cookie-backed session restoration.
-- Inbox, starred, and archived conversation views.
-- Conversation search, unread counts, and new conversation creation.
-- Responsive conversation list, thread, and mobile navigation.
-- Optional real-time messages through Socket.IO.
-- Sample conversations are currently stored in frontend source; they are not loaded from or saved to the backend.
+### Authentication
 
-## Requirements
+* User registration
+* User login
+* Username/email-based authentication
+* Password validation
+* Protected chat access
+* Logout functionality
 
-- Node.js 20 or newer recommended.
-- npm.
-- The ChatApplication backend running separately for login, registration, session, and real-time features.
+### Chat
 
-## Setup
+* One-to-one real-time messaging
+* Send messages instantly
+* Receive messages instantly using Socket.io
+* Chat history
+* Message timestamps
+* Messages remain available after page refresh
+* Online/offline connection handling
+* Responsive chat interface
 
-1. Open a terminal in the frontend project directory.
-2. Install frontend dependencies:
+### Backend
 
-   ```sh
-   npm install
-   ```
+* REST APIs using Express.js
+* Socket.io real-time communication
+* MongoDB database
+* Mongoose ODM
+* Error handling
+* CORS configuration
 
-3. Create a local environment file. In PowerShell:
+### Deployment
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+* Frontend deployed on Netlify
+* Backend deployed on Render
+* MongoDB hosted using MongoDB Atlas
 
-   On macOS or Linux:
+---
 
-   ```sh
-   cp .env.example .env
-   ```
+# Technology Stack
 
-4. Set the backend addresses in `.env`:
+## Frontend
 
-   ```dotenv
-   VITE_API_URL=http://localhost:3001
-   VITE_SOCKET_URL=http://localhost:3001
-   ```
+* React
+* JavaScript
+* Axios
+* Socket.io Client
+* HTML5
+* CSS3
+* Bootstrap / Responsive CSS
 
-   Change the host or port to match your backend. The frontend and backend are separate projects; start the backend from its own directory using its documented command.
+## Backend
 
-5. Start the frontend:
+* Node.js
+* Express.js
+* Socket.io
+* MongoDB
+* Mongoose
+* CORS
 
-   ```sh
-   npm run dev
-   ```
+---
 
-6. Open the local URL printed by Vite, normally `http://localhost:5173`.
-
-Vite proxies API requests to `VITE_API_URL` during development. Restart the Vite server after changing environment variables.
-
-## API Routes
-
-The frontend calls these backend routes through the Axios client in `src/api/axiosInstance.ts` and `src/api/authApi.ts`:
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/connection` | Check that the API is reachable. |
-| `POST` | `/api/user/login` | Sign in with email and password. |
-| `POST` | `/api/user/register` | Register with name, email, and password. |
-| `GET` | `/api/users/getuser` | Restore the signed-in user from the session cookie. |
-| `POST` | `/api/users/logout` | End the server session. |
-
-The Axios client uses `withCredentials: true`. The backend must support credentialed requests and configure CORS for the frontend origin. For credentialed cross-origin production requests, the backend must return the exact allowed frontend origin and `Access-Control-Allow-Credentials: true`; wildcard `Access-Control-Allow-Origin: *` is not valid with credentials.
-
-The auth response types are defined in `src/types/auth.ts`. Login responses may include `user`, `token` or `accessToken`, or those fields inside `data`. The user object should include an email and ideally a name or username.
-
-## Authentication Flow
-
-1. `useAuth` calls `/api/connection` and checks for an existing session on startup.
-2. `authRepository` coordinates login, registration, logout, and session restoration.
-3. `userRepository` unwraps Axios responses and converts request failures into user-facing messages.
-4. `authApi` defines the HTTP methods and paths.
-5. Login stores the returned user in React state. Registration returns to the login page after success. Logout calls the backend and clears the local session.
-
-## Real-Time Messaging
-
-If `VITE_SOCKET_URL` is set, the app connects to that Socket.IO server after login. It emits `message:send` with `{ id, conversationId, text, time, sender }` and listens for `message:receive` with the same message shape. Without this variable, the chat interface still loads, but messages are only updated locally in the current session.
-
-## Project Structure
+# Application Flow
 
 ```text
-src/
-  api/           Axios client and endpoint functions
-  components/    Auth, inbox, navigation, and thread UI
-  hooks/         React auth/session hook
-  repository/    Auth and user data coordination
-  types/         Shared auth types
-  App.tsx        App shell, sample conversations, and chat state
-  App.css        Chat and auth styling
-  chatTypes.ts   Conversation and message types
-  main.tsx       React application entry point
-  index.css      Global styles and theme variables
+User
+ │
+ ├── Register
+ │      ↓
+ │   MongoDB
+ │
+ ├── Login
+ │      ↓
+ │   Authentication
+ │      ↓
+ │   Chat Application
+ │      ↓
+ ├── Fetch Previous Messages
+ │
+ └── Send Message
+        ↓
+     Socket.io
+        ↓
+   Connected User
+        ↓
+     MongoDB
 ```
 
-## Available Commands
+---
 
-```sh
-npm run dev      # Start the Vite development server
-npm run build    # Type-check and create a production build in dist/
-npm run lint     # Run ESLint
-npm run preview  # Preview the production build locally
+# Authentication Flow
+
+## Register
+
+A new user provides the required registration information.
+
+Example:
+
+```text
+Username
+Email
+Password
 ```
 
-There is currently no automated test script configured.
+The frontend sends the registration request to the backend.
 
-## Troubleshooting
+```http
+POST /api/user/register
+```
 
-- **API connection unavailable:** Confirm the backend is running and `VITE_API_URL` has the correct address and port.
-- **CORS or cookie errors:** Configure the backend to allow the frontend origin with credentials. Restart both servers after configuration changes.
-- **Socket remains disconnected:** Confirm the backend Socket.IO server is running and `VITE_SOCKET_URL` is correct.
-- **Environment changes do not apply:** Restart Vite after editing `.env`.
-- **Localhost does not work across devices:** Use the backend machine's reachable LAN address instead of `localhost`.
+The backend validates the information and creates the user in MongoDB.
 
-Vite environment variables are included in the browser bundle. Do not put private secrets in `VITE_*` variables.
+Example response:
+
+```json
+{
+  "success": true,
+  "message": "User registered successfully"
+}
+```
+
+---
+
+# Login
+
+Registered users can log in using their credentials.
+
+```http
+POST /api/user/login
+```
+
+Example request:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+```
+
+After successful authentication, the user is redirected to the chat application.
+
+Example response:
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "_id": "USER_ID",
+    "username": "User"
+  }
+}
+```
+
+---
+
+# Logout
+
+The user can log out from the application.
+
+```http
+POST /api/user/logout
+```
+
+After logout, the user is returned to the login screen.
+
+---
+
+# Chat APIs
+
+## Health Check
+
+```http
+GET /api/health
+```
+
+Checks whether the backend and database are available.
+
+## Connection
+
+```http
+GET /api/connection
+```
+
+Checks the server/database connection.
+
+## Send Message
+
+```http
+POST /api/conversations/messages
+```
+
+Example:
+
+```json
+{
+  "senderId": "USER_ID",
+  "receiverId": "USER_ID",
+  "message": "Hello!"
+}
+```
+
+## Fetch Chat History
+
+```http
+GET /api/conversations/:userId/:receiverId
+```
+
+Returns previous messages between two users.
+
+---
+
+# Socket.io Real-Time Communication
+
+Socket.io is used for real-time messaging.
+
+When a user sends a message:
+
+```text
+User A
+   │
+   │ send_message
+   ↓
+Socket.io Server
+   │
+   ├── Save message to MongoDB
+   │
+   └── Broadcast message
+          ↓
+       User B
+```
+
+The receiving user gets the message immediately without refreshing the page.
+
+Example events:
+
+```text
+connection
+join_room
+send_message
+receive_message
+disconnect
+```
+
+---
+
+# Database
+
+MongoDB is used to store users and chat messages.
+
+## User
+
+Example fields:
+
+```text
+_id
+username
+email
+password
+createdAt
+updatedAt
+```
+
+## Message
+
+Example fields:
+
+```text
+_id
+senderId
+receiverId
+message
+createdAt
+updatedAt
+```
+
+MongoDB timestamps are used to display the message date and time.
+
+---
+
+# Project Structure
+
+```text
+chat-application/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   │   ├── Login/
+│   │   │   ├── Register/
+│   │   │   └── Chat/
+│   │   ├── services/
+│   │   ├── hooks/
+│   │   ├── context/
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   │
+│   ├── package.json
+│   └── .env.example
+│
+├── backend/
+│   ├── controllers/
+│   ├── models/
+│   │   ├── User.js
+│   │   └── Message.js
+│   ├── routes/
+│   │   ├── userRoutes.js
+│   │   └── conversationRoutes.js
+│   ├── middleware/
+│   ├── socket/
+│   ├── config/
+│   ├── app.js
+│   ├── server.js
+│   ├── package.json
+│   └── .env.example
+│
+├── README.md
+└── .gitignore
+```
+
+---
+
+# Environment Variables
+
+## Backend
+
+Create a `.env` file inside the backend folder:
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_connection_string
+FRONTEND_ORIGIN=https://livechatapplications.netlify.app
+```
+
+## Frontend
+
+Create a `.env` file:
+
+```env
+VITE_API_URL=https://chatapp-backend-6zgm.onrender.com
+VITE_SOCKET_URL=https://chatapp-backend-6zgm.onrender.com
+```
+
+Do not commit the actual `.env` file to GitHub.
+
+Use `.env.example` files for documentation.
+
+---
+
+# Local Setup
+
+## Clone Repository
+
+```bash
+git clone YOUR_GITHUB_REPOSITORY_URL
+cd chat-application
+```
+
+---
+
+# Backend Setup
+
+```bash
+cd backend
+npm install
+```
+
+Create the `.env` file and add the required environment variables.
+
+Run the backend:
+
+```bash
+npm run dev
+```
+
+Backend:
+
+```text
+http://localhost:5000
+```
+
+---
+
+# Frontend Setup
+
+Open another terminal:
+
+```bash
+cd frontend
+npm install
+```
+
+Run the frontend:
+
+```bash
+npm run dev
+```
+
+Frontend:
+
+```text
+http://localhost:5173
+```
+
+---
+
+# User Flow
+
+```text
+1. Open Application
+        ↓
+2. Register New Account
+        ↓
+3. Login
+        ↓
+4. Open Chat
+        ↓
+5. Select User
+        ↓
+6. Fetch Previous Messages
+        ↓
+7. Send Message
+        ↓
+8. Socket.io Delivers Message
+        ↓
+9. Receiver Gets Message Instantly
+        ↓
+10. Message Saved in MongoDB
+```
+
+---
+
+# Design Decisions
+
+### React
+
+React was selected for building a reusable and responsive user interface.
+
+### Node.js + Express
+
+Node.js and Express provide the REST API layer and handle authentication, users, and chat operations.
+
+### Socket.io
+
+Socket.io was selected because real-time communication is a mandatory requirement of this project.
+
+### MongoDB
+
+MongoDB is used to persist user accounts and chat messages so that messages remain available after refreshing the application.
+
+### REST + Socket.io
+
+REST APIs are used for authentication and retrieving historical data, while Socket.io is used for real-time message delivery.
+
+---
+
+# Error Handling
+
+The application handles:
+
+* Invalid login credentials
+* Registration validation errors
+* API errors
+* Database connection errors
+* Socket connection errors
+* User disconnections
+* Invalid requests
+* CORS configuration
+
+---
+
+# Deployment
+
+## Frontend
+
+```text
+https://livechatapplications.netlify.app
+```
+
+## Backend
+
+```text
+https://chatapp-backend-6zgm.onrender.com
+```
+
+## API Connection
+
+```text
+https://chatapp-backend-6zgm.onrender.com/api/connection
+```
+
+---
+
+# Testing
+
+The application was tested using multiple browser sessions.
+
+### Authentication
+
+* Register a new user
+* Login with registered credentials
+* Logout
+* Login again
+
+### Real-Time Messaging
+
+* Login as User A
+* Login as User B
+* Send a message from User A
+* Verify that User B receives the message instantly
+* Reply from User B
+* Verify that User A receives the reply
+
+### Persistence
+
+* Send messages
+* Refresh the application
+* Verify previous messages are displayed
+
+### Connection
+
+* Disconnect a browser
+* Reconnect
+* Verify Socket.io connection is restored
+
+---
+
+# Bonus Features
+
+The application may include the following additional features:
+
+* Username-based login
+* Online/offline status
+* Typing indicator
+* Message read/delivered status
+* MongoDB persistence
+* Responsive design
+* Deployed frontend
+* Deployed backend
+
+Only mark a bonus feature as implemented if it is working in the submitted application.
+
+---
+
+# Submission
+
+## GitHub Repository
+
+```text
+YOUR_GITHUB_REPOSITORY_URL
+```
+
+## Live Application
+
+```text
+https://livechatapplications.netlify.app
+```
+
+## Backend API
+
+```text
+https://chatapp-backend-6zgm.onrender.com
+```
+
+## Screen Recording
+
+```text
+YOUR_GOOGLE_DRIVE_SCREEN_RECORDING_LINK
+```
+
+## APK
+
+Not applicable because this submission uses the React web frontend.
+
+---
+
+# Assumptions
+
+* Users must register before accessing the chat.
+* Login credentials are required to access protected chat functionality.
+* MongoDB is used for persistent storage.
+* Socket.io handles real-time communication.
+* REST APIs handle authentication and chat history.
+* The application is designed primarily for one-to-one messaging.
+* Internet connectivity is required for real-time communication.
+
+---
+
+# Author
+
+**Bhushan Patil**
+
+Real-Time Chat Application
+React | Node.js | Express.js | Socket.io | MongoDB
