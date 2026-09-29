@@ -291,6 +291,7 @@ function App() {
       />
       <InboxPanel
         folder={folder}
+        signedInUser={authSession.user}
         visibleConversations={visibleConversations}
         activeId={activeId}
         search={search}

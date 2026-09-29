@@ -8,14 +8,19 @@ export type RegisterInput = LoginCredentials & {
 }
 
 export type AuthUser = {
+  id: string | null
   name: string
   email: string
+  avatar: string
 }
 
 export type ApiUser = {
+  _id?: string
+  id?: string
   name?: string
   username?: string
   email?: string
+  avatar?: string
 }
 
 export type AuthApiData = {
@@ -24,7 +29,7 @@ export type AuthApiData = {
   user?: ApiUser
 }
 
-export type AuthApiResponse = AuthApiData & {
+export type AuthApiResponse = AuthApiData & ApiUser & {
   message?: string
   data?: AuthApiData
 }

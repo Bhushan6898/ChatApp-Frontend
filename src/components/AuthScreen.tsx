@@ -9,7 +9,7 @@ type AuthScreenProps = {
   onRegister: (input: RegisterInput) => Promise<void>
 }
 
-export function AuthScreen({ apiConnectionStatus, apiConnectionResponse, onLogin, onRegister }: AuthScreenProps) {
+export function AuthScreen({ apiConnectionStatus, onLogin, onRegister }: AuthScreenProps) {
   const [page, setPage] = useState<'login' | 'register'>(() => window.location.hash === '#/register' ? 'register' : 'login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')

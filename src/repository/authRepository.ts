@@ -2,14 +2,16 @@ import userRepository from './userRepository'
 import type { AuthApiResponse, AuthSession, LoginCredentials, RegisterInput } from '../types/auth'
 
 function createSession(response: AuthApiResponse, fallbackEmail: string): AuthSession {
-  const apiUser = response.user ?? response.data?.user
+  const apiUser = response.user ?? response.data?.user ?? response
   const email = apiUser?.email ?? fallbackEmail
 
   return {
     accessToken: response.accessToken ?? response.token ?? response.data?.accessToken ?? response.data?.token ?? null,
     user: {
+      id: apiUser?._id ?? apiUser?.id ?? null,
       name: apiUser?.name ?? apiUser?.username ?? email.split('@')[0],
       email,
+      avatar: apiUser?.avatar ?? '',
     },
   }
 }

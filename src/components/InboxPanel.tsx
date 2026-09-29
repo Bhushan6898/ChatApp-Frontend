@@ -1,8 +1,10 @@
 import { ChevronDown, MessageCircle, Plus, Search } from 'lucide-react'
 import type { Conversation, Folder } from '../chatTypes'
+import type { AuthUser } from '../types/auth'
 
 type InboxPanelProps = {
   folder: Folder
+  signedInUser: AuthUser
   visibleConversations: Conversation[]
   activeId: number
   search: string
@@ -13,6 +15,7 @@ type InboxPanelProps = {
 
 export function InboxPanel({
   folder,
+  signedInUser,
   visibleConversations,
   activeId,
   search,
@@ -27,6 +30,15 @@ export function InboxPanel({
           <span className="workspace-dot" />
           <span>ChatApplication </span>
           <ChevronDown size={14} />
+        </div>
+        <div className="signed-in-user">
+          <span className="signed-in-avatar" aria-hidden="true">
+            {signedInUser.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
+          </span>
+          <span className="signed-in-copy">
+            <strong>{signedInUser.name}</strong>
+            <small>{signedInUser.email}</small>
+          </span>
         </div>
         <div className="inbox-title-row">
           <div>
